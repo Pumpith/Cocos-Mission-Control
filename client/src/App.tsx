@@ -9,6 +9,10 @@ import Dashboard from "@/pages/Dashboard";
 import WeaponVault from "@/pages/WeaponVault";
 import FirewallMonitor from "@/pages/FirewallMonitor";
 import ThreatIntel from "@/pages/ThreatIntel";
+import PixelOfficePage from "@/pages/PixelOfficePage";
+import AgentComms from "@/pages/AgentComms";
+import ConfigEditor from "@/pages/ConfigEditor";
+import SecurityHealth from "@/pages/SecurityHealth";
 import OnboardingWizard from "@/components/OnboardingWizard";
 import BootSequence from "@/components/BootSequence";
 
@@ -19,6 +23,10 @@ function AppRouter() {
       <Route path="/weapons" component={WeaponVault} />
       <Route path="/firewall" component={FirewallMonitor} />
       <Route path="/threat-intel" component={ThreatIntel} />
+      <Route path="/office" component={PixelOfficePage} />
+      <Route path="/agent-comms" component={AgentComms} />
+      <Route path="/config" component={ConfigEditor} />
+      <Route path="/security" component={SecurityHealth} />
       <Route component={Dashboard} />
     </Switch>
   );
@@ -30,8 +38,6 @@ function App() {
   const [showOnboarding, setShowOnboarding] = useState(false);
 
   useEffect(() => {
-    // Check if user has completed onboarding (in-memory only, no localStorage)
-    // Show onboarding on first visit
     if (!onboarded && booted) {
       setShowOnboarding(true);
     }

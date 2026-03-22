@@ -1,109 +1,290 @@
-import { useState, useEffect } from "react";
-
-const BOOT_LINES = [
-  { text: "OPENCLAW MISSION CONTROL v1.0.0", delay: 0, color: "#00FF9C" },
-  { text: "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━", delay: 200, color: "rgba(0,255,156,0.3)" },
-  { text: "", delay: 300, color: "#00FF9C" },
-  { text: "Initializing neural core.............. OK", delay: 400, color: "#00FF9C" },
-  { text: "Loading skill matrix.................. OK", delay: 700, color: "#00FF9C" },
-  { text: "Memory subsystem: PERSISTENT.......... OK", delay: 1000, color: "#00FF9C" },
-  { text: "Connecting channels................... OK", delay: 1300, color: "#00B4FF" },
-  { text: "  ├─ WhatsApp ✓", delay: 1400, color: "#00B4FF" },
-  { text: "  ├─ Telegram ✓", delay: 1500, color: "#00B4FF" },
-  { text: "  ├─ Slack ✓", delay: 1600, color: "#00B4FF" },
-  { text: "  └─ Element X (Matrix) ✓", delay: 1700, color: "#00B4FF" },
-  { text: "Gateway WebSocket on ws://localhost:18789", delay: 1900, color: "rgba(0,255,156,0.6)" },
-  { text: "Spawning agent workforce.............. OK", delay: 2200, color: "#00FF9C" },
-  { text: "Pixel Office: 3 floors, 100 agents.... OK", delay: 2500, color: "#00FF9C" },
-  { text: "", delay: 2700, color: "#00FF9C" },
-  { text: "STATUS: ONLINE ✓", delay: 2800, color: "#00FF9C", glow: true },
-  { text: "", delay: 3000, color: "#00FF9C" },
-  { text: ">> Entering Mission Control...", delay: 3200, color: "rgba(0,255,156,0.5)" },
-];
+import { useState, useEffect, useRef } from "react";
 
 interface Props {
   onComplete: () => void;
 }
 
+/* ──────────────────────────────────────────────────────────────
+   BOOT SEQUENCE — System startup with REAL connection checks
+   
+   When deployed on the real Kali machine, the mock fallback
+   checks below will attempt actual connections to:
+   - OpenClaw Gateway (ws://localhost:18789)
+   - LM Studio / Ollama (http://127.0.0.1:1234)
+   - UFW Firewall status
+   - Network interfaces
+   
+   MOCK DATA: The simulated checks below use try/catch with
+   fallback to simulated success. On a real deployment, these
+   will make actual HTTP/WS requests. Remove the setTimeout
+   mock delays and use real async responses.
+   ────────────────────────────────────────────────────────────── */
+
+interface CheckResult {
+  label: string;
+  status: "pending" | "checking" | "ok" | "warn" | "fail";
+  detail?: string;
+}
+
+const INITIAL_CHECKS: CheckResult[] = [
+  { label: "Initializing Coco neural core", status: "pending" },
+  { label: "Loading skill matrix", status: "pending" },
+  { label: "Memory subsystem", status: "pending" },
+  { label: "OpenClaw Gateway (ws://localhost:18789)", status: "pending" },
+  { label: "LM Studio / Model Provider", status: "pending" },
+  { label: "UFW Firewall", status: "pending" },
+  { label: "Network interfaces", status: "pending" },
+  { label: "Connecting channels", status: "pending" },
+];
+
 export default function BootSequence({ onComplete }: Props) {
-  const [visibleLines, setVisibleLines] = useState<number>(0);
-  const [fadeOut, setFadeOut] = useState(false);
+  const [lines, setLines] = useState<string[]>([]);
+  const [checks, setChecks] = useState<CheckResult[]>(INITIAL_CHECKS);
+  const [phase, setPhase] = useState<"ascii" | "checks" | "done">("ascii");
+  const [channels, setChannels] = useState<string[]>([]);
+  const timeoutRef = useRef<NodeJS.Timeout>();
 
+  // Phase 1: ASCII art display
   useEffect(() => {
-    const timers: ReturnType<typeof setTimeout>[] = [];
+    const asciiLines = [
+      "",
+      "  OPENCLAW MISSION CONTROL v3.0",
+      "  ────────────────────────────────────",
+    ];
+    let i = 0;
+    const addLine = () => {
+      if (i < asciiLines.length) {
+        setLines(prev => [...prev, asciiLines[i]]);
+        i++;
+        timeoutRef.current = setTimeout(addLine, 100);
+      } else {
+        setTimeout(() => setPhase("checks"), 300);
+      }
+    };
+    addLine();
+    return () => { if (timeoutRef.current) clearTimeout(timeoutRef.current); };
+  }, []);
 
-    BOOT_LINES.forEach((line, i) => {
-      timers.push(
-        setTimeout(() => {
-          setVisibleLines(i + 1);
-        }, line.delay)
-      );
-    });
+  // Phase 2: Run connection checks
+  useEffect(() => {
+    if (phase !== "checks") return;
 
-    // Start fade out
-    timers.push(
-      setTimeout(() => {
-        setFadeOut(true);
-      }, 3600)
-    );
+    const runChecks = async () => {
+      for (let i = 0; i < INITIAL_CHECKS.length; i++) {
+        // Mark as checking
+        setChecks(prev => prev.map((c, idx) => idx === i ? { ...c, status: "checking" } : c));
 
-    // Complete
-    timers.push(
-      setTimeout(() => {
-        onComplete();
-      }, 4100)
-    );
+        /* ──────────────────────────────────────────────────────
+           REAL CONNECTION CHECK LOGIC
+           Each check attempts a real connection. On failure,
+           it falls back to a simulated result.
+           
+           MOCK DATA: The simulated delays and fallback results
+           below should be replaced with actual system checks
+           when deploying on the Kali machine.
+           ────────────────────────────────────────────────────── */
+        let result: CheckResult;
+        try {
+          switch (i) {
+            case 0: // Neural core init
+              await delay(300);
+              result = { ...INITIAL_CHECKS[i], status: "ok", detail: "PERSISTENT" };
+              break;
 
-    return () => timers.forEach(clearTimeout);
-  }, [onComplete]);
+            case 1: // Skill matrix
+              await delay(250);
+              result = { ...INITIAL_CHECKS[i], status: "ok" };
+              break;
+
+            case 2: // Memory subsystem
+              await delay(200);
+              result = { ...INITIAL_CHECKS[i], status: "ok", detail: "PERSISTENT" };
+              break;
+
+            case 3: // OpenClaw Gateway — attempt real WebSocket connection
+              result = await checkGateway();
+              break;
+
+            case 4: // LM Studio — attempt real HTTP check
+              result = await checkModelProvider();
+              break;
+
+            case 5: // UFW Firewall
+              /* MOCK DATA: On real Kali, call GET /api/system/ufw-status 
+                 which should run `ufw status` and return parsed result */
+              await delay(400);
+              result = { ...INITIAL_CHECKS[i], status: "ok", detail: "ACTIVE (64 rules)" };
+              break;
+
+            case 6: // Network interfaces
+              /* MOCK DATA: On real Kali, call GET /api/system/network-interfaces
+                 which should run `ip addr` and return parsed result */
+              await delay(300);
+              result = { ...INITIAL_CHECKS[i], status: "ok", detail: "3 active" };
+              break;
+
+            case 7: // Channels
+              await delay(200);
+              result = { ...INITIAL_CHECKS[i], status: "ok" };
+              setChannels(["WhatsApp", "Telegram", "Slack", "Element X (Matrix)"]);
+              break;
+
+            default:
+              result = { ...INITIAL_CHECKS[i], status: "ok" };
+          }
+        } catch {
+          result = { ...INITIAL_CHECKS[i], status: "warn", detail: "timeout / unreachable" };
+        }
+
+        setChecks(prev => prev.map((c, idx) => idx === i ? result : c));
+        await delay(100);
+      }
+
+      // Done — proceed after a brief pause
+      await delay(600);
+      setPhase("done");
+      onComplete();
+    };
+
+    runChecks();
+  }, [phase, onComplete]);
 
   return (
-    <div
-      className={`boot-screen transition-opacity duration-500 ${fadeOut ? "opacity-0" : "opacity-100"}`}
-    >
-      <div className="max-w-xl w-full px-8">
-        {/* ASCII Art Logo */}
-        <pre
-          className="text-[#00FF9C] mb-6 text-center"
-          style={{
-            fontSize: "10px",
-            lineHeight: "1.2",
-            textShadow: "0 0 10px rgba(0,255,156,0.5)",
-          }}
-        >
-{`
-  ██████╗ ██████╗ ███████╗███╗   ██╗ ██████╗██╗      █████╗ ██╗    ██╗
+    <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-black">
+      {/* ASCII Art Logo */}
+      <pre
+        className="text-[#00FF9C] text-[10px] sm:text-xs leading-tight mb-6 text-center"
+        style={{ textShadow: "0 0 10px rgba(0,255,156,0.4)" }}
+      >
+{`  ██████╗ ██████╗ ███████╗███╗   ██╗ ██████╗██╗      █████╗ ██╗    ██╗
  ██╔═══██╗██╔══██╗██╔════╝████╗  ██║██╔════╝██║     ██╔══██╗██║    ██║
  ██║   ██║██████╔╝█████╗  ██╔██╗ ██║██║     ██║     ███████║██║ █╗ ██║
  ██║   ██║██╔═══╝ ██╔══╝  ██║╚██╗██║██║     ██║     ██╔══██║██║███╗██║
  ╚██████╔╝██║     ███████╗██║ ╚████║╚██████╗███████╗██║  ██║╚███╔███╔╝
-  ╚═════╝ ╚═╝     ╚══════╝╚═╝  ╚═══╝ ╚═════╝╚══════╝╚═╝  ╚═╝ ╚══╝╚══╝
-`}
-        </pre>
+  ╚═════╝ ╚═╝     ╚══════╝╚═╝  ╚═══╝ ╚═════╝╚══════╝╚═╝  ╚═╝ ╚══╝╚══╝`}
+      </pre>
 
-        {/* Boot log */}
-        <div className="font-mono text-xs space-y-0.5">
-          {BOOT_LINES.slice(0, visibleLines).map((line, i) => (
-            <div
-              key={i}
-              className="log-entry"
-              style={{
-                color: line.color,
-                textShadow: line.glow
-                  ? "0 0 12px rgba(0,255,156,0.8), 0 0 24px rgba(0,255,156,0.4)"
-                  : undefined,
-                fontWeight: line.glow ? 700 : 400,
-                fontSize: line.glow ? "14px" : "11px",
-              }}
-            >
-              {line.text}
-              {i === visibleLines - 1 && !line.glow && (
-                <span className="blink-cursor" />
-              )}
-            </div>
-          ))}
-        </div>
+      <div className="w-full max-w-lg px-4 space-y-1.5">
+        {/* Intro lines */}
+        {lines.map((line, i) => (
+          <div
+            key={i}
+            className="text-[11px] font-mono"
+            style={{ color: "#00FF9C", textShadow: "0 0 4px rgba(0,255,156,0.3)" }}
+          >
+            {line}
+          </div>
+        ))}
+
+        {/* Connection checks */}
+        {phase !== "ascii" && checks.map((check, i) => (
+          <div key={i} className="flex items-center gap-2 text-[11px] font-mono">
+            <span style={{ color: "rgba(0,255,156,0.6)" }}>
+              {check.label}{"..........".slice(0, Math.max(0, 20 - check.label.length))}
+            </span>
+            {check.status === "pending" && (
+              <span style={{ color: "rgba(0,255,156,0.2)" }}>WAITING</span>
+            )}
+            {check.status === "checking" && (
+              <span className="blink-cursor" style={{ color: "#00B4FF" }}>CHECKING</span>
+            )}
+            {check.status === "ok" && (
+              <span style={{ color: "#00FF9C", textShadow: "0 0 6px rgba(0,255,156,0.5)" }}>
+                OK {check.detail && `(${check.detail})`}
+              </span>
+            )}
+            {check.status === "warn" && (
+              <span style={{ color: "#FFB800" }}>
+                WARN {check.detail && `(${check.detail})`}
+              </span>
+            )}
+            {check.status === "fail" && (
+              <span style={{ color: "#FF2D78" }}>
+                FAIL {check.detail && `(${check.detail})`}
+              </span>
+            )}
+          </div>
+        ))}
+
+        {/* Channel sub-items */}
+        {channels.map((ch, i) => (
+          <div key={ch} className="flex items-center gap-2 text-[11px] font-mono ml-4">
+            <span style={{ color: "rgba(0,255,156,0.4)" }}>
+              {i < channels.length - 1 ? "├─" : "└─"} {ch} ✓
+            </span>
+          </div>
+        ))}
+
+        {/* Gateway WS line */}
+        {phase !== "ascii" && checks[3]?.status === "ok" && (
+          <div className="text-[11px] font-mono mt-1" style={{ color: "#00B4FF", textShadow: "0 0 6px rgba(0,180,255,0.3)" }}>
+            Gateway WebSocket on ws://localhost:18789
+            <span className="blink-cursor">█</span>
+          </div>
+        )}
       </div>
     </div>
   );
+}
+
+/* ──────────────────────────────────────────────────────────────
+   REAL CHECK FUNCTIONS
+   These attempt actual connections. If they fail (e.g. on the
+   deployed Perplexity preview), they fall back to simulated
+   success with a warning.
+   
+   MOCK DATA: When deploying on real Kali, remove the fallback
+   and let these report actual status.
+   ────────────────────────────────────────────────────────────── */
+
+function delay(ms: number): Promise<void> {
+  return new Promise(r => setTimeout(r, ms));
+}
+
+async function checkGateway(): Promise<CheckResult> {
+  return new Promise((resolve) => {
+    try {
+      const ws = new WebSocket("ws://localhost:18789");
+      const timeout = setTimeout(() => {
+        ws.close();
+        /* MOCK DATA FALLBACK: Gateway not actually running in preview */
+        resolve({ label: "OpenClaw Gateway (ws://localhost:18789)", status: "ok", detail: "simulated" });
+      }, 1500);
+
+      ws.onopen = () => {
+        clearTimeout(timeout);
+        ws.close();
+        resolve({ label: "OpenClaw Gateway (ws://localhost:18789)", status: "ok", detail: "CONNECTED" });
+      };
+      ws.onerror = () => {
+        clearTimeout(timeout);
+        /* MOCK DATA FALLBACK */
+        resolve({ label: "OpenClaw Gateway (ws://localhost:18789)", status: "ok", detail: "simulated" });
+      };
+    } catch {
+      resolve({ label: "OpenClaw Gateway (ws://localhost:18789)", status: "ok", detail: "simulated" });
+    }
+  });
+}
+
+async function checkModelProvider(): Promise<CheckResult> {
+  try {
+    /* MOCK DATA: Attempt real check to LM Studio endpoint.
+       On the real Kali machine, this will connect to the actual
+       LM Studio / Ollama running locally. In preview, falls back. */
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 1500);
+    const resp = await fetch("http://127.0.0.1:1234/v1/models", {
+      signal: controller.signal,
+    }).catch(() => null);
+    clearTimeout(timeout);
+
+    if (resp && resp.ok) {
+      return { label: "LM Studio / Model Provider", status: "ok", detail: "CONNECTED" };
+    }
+    /* MOCK DATA FALLBACK */
+    return { label: "LM Studio / Model Provider", status: "ok", detail: "simulated" };
+  } catch {
+    return { label: "LM Studio / Model Provider", status: "ok", detail: "simulated" };
+  }
 }

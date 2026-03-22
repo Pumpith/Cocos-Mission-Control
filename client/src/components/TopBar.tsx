@@ -1,7 +1,13 @@
 import { useState, useEffect } from "react";
 import { Wifi, WifiOff, Clock, Timer } from "lucide-react";
 
-// Hardcoded start time: 4 days, 12 hours ago
+/* ──────────────────────────────────────────────────────────────
+   MOCK DATA: UPTIME_START
+   When deployed on a real Kali machine, this should be replaced
+   with the actual process start time from the OpenClaw gateway.
+   Replace this hardcoded offset with a real API call to
+   GET /api/system/uptime or similar.
+   ────────────────────────────────────────────────────────────── */
 const UPTIME_START = Date.now() - (4 * 24 * 60 * 60 * 1000) - (12 * 60 * 60 * 1000) - (37 * 60 * 1000);
 
 function formatTime(date: Date) {
@@ -38,16 +44,16 @@ export default function TopBar() {
 
   return (
     <div
-      className="flex items-center justify-between px-4 py-2 border-b"
+      className="flex items-center justify-between px-4 py-2 border-b flex-shrink-0"
       style={{
         borderColor: "rgba(0,255,156,0.15)",
         background: "rgba(5,5,8,0.98)",
       }}
     >
-      {/* Left: Logo */}
+      {/* Left: Logo — Coco 🎃 Branding */}
       <div className="flex items-center gap-3">
-        <span className="text-2xl" role="img" aria-label="lobster">🦞</span>
-        <div>
+        <span className="text-2xl" role="img" aria-label="coco agent">🎃</span>
+        <div className="hidden sm:block">
           <span
             className="text-sm font-bold tracking-widest glow-text"
             style={{ color: "#00FF9C" }}
@@ -55,20 +61,20 @@ export default function TopBar() {
             OPENCLAW
           </span>
           <span
-            className="text-sm font-light tracking-widest ml-2"
+            className="text-sm font-light tracking-widest ml-2 hidden md:inline"
             style={{ color: "rgba(0,255,156,0.4)" }}
           >
-            // MISSION CONTROL
+            // COCO MISSION CONTROL
           </span>
         </div>
       </div>
 
-      {/* Center: Clock */}
-      <div className="flex items-center gap-6">
+      {/* Center: Clock — responsive, hide on small screens */}
+      <div className="hidden md:flex items-center gap-6">
         <div className="flex items-center gap-2">
           <Clock size={12} style={{ color: "rgba(0,255,156,0.5)" }} />
           <span
-            className="text-xs tracking-wider"
+            className="text-xs tracking-wider hidden lg:inline"
             style={{ color: "rgba(0,255,156,0.7)" }}
           >
             {formatDate(now)}
@@ -128,7 +134,7 @@ export default function TopBar() {
               : "0 0 6px rgba(255,45,120,0.5)",
           }}
         >
-          {online ? "AGENT ONLINE" : "AGENT OFFLINE"}
+          {online ? "COCO ONLINE" : "COCO OFFLINE"}
         </span>
       </button>
     </div>

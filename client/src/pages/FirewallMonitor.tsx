@@ -1,5 +1,15 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import AppShell from "@/components/AppShell";
+
+/* MOCK DATA: All firewall data is simulated — rules, traffic,
+   blocked connections, and stats. On real deployment:
+   - Fetch UFW rules from: GET /api/system/ufw-rules
+     (runs `ufw status verbose` and parses output)
+   - Live traffic from: WebSocket at /api/system/traffic-feed
+     (runs `tcpdump` or `conntrack` and streams events)
+   - Blocked connections from: GET /api/system/ufw-blocked
+     (parses /var/log/ufw.log)
+   Replace all hardcoded arrays and random generators. */
 import {
   Shield,
   ShieldOff,

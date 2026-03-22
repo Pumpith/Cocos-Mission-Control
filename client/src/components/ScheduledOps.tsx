@@ -1,4 +1,10 @@
 import { useState } from "react";
+
+/* MOCK DATA: The INITIAL_TASKS array below simulates cron jobs.
+   On real deployment, fetch from GET /api/cron/jobs via the
+   OpenClaw Gateway API. Replace the hardcoded tasks with actual
+   cron job data. The toggle/add/remove actions should call the
+   corresponding API endpoints. */
 import { Plus, Calendar } from "lucide-react";
 
 interface Task {

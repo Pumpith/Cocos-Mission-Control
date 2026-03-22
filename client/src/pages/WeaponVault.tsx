@@ -1,5 +1,13 @@
 import { useState, useCallback } from "react";
 import AppShell from "@/components/AppShell";
+
+/* MOCK DATA: The KALI_TOOLS array below lists Kali Linux tools.
+   On real deployment, this should be populated dynamically by
+   scanning the installed tools on the Kali machine:
+   - Run `dpkg --list | grep kali` or parse /usr/share/kali-menu
+   - The LAUNCH button should execute the actual tool via the
+     OpenClaw Gateway shell exec API: POST /api/exec
+   Replace the hardcoded tool list with actual installed tools. */
 import {
   Search,
   Crosshair,

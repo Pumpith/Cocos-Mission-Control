@@ -1,6 +1,12 @@
 import { useState, useEffect } from "react";
 import { Radio, Shield, Server, Activity } from "lucide-react";
 
+/* MOCK DATA: Gateway connection status is simulated.
+   On real deployment, this component should attempt a real
+   WebSocket connection to ws://localhost:18789 and display
+   the actual connection state. Replace the simulated status
+   with real WS connection lifecycle management. */
+
 interface GatewayStatus {
   connected: boolean;
   protocol: number;

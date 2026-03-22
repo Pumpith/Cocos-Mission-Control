@@ -1,6 +1,13 @@
 import { useState, useEffect, useRef } from "react";
 import { Pause, Play, Trash2, Terminal, Send } from "lucide-react";
 
+/* MOCK DATA: The INITIAL_LOGS array and the generateLog() function
+   below simulate the command log feed. On real deployment, replace
+   with WebSocket subscription to the OpenClaw Gateway event stream
+   at ws://localhost:18789. The gateway emits real-time log events
+   that should populate this feed. Remove all hardcoded log entries
+   and the random message generator. */
+
 interface LogEntry {
   time: string;
   direction: "in" | "out" | "ok";

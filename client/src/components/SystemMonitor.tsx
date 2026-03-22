@@ -1,4 +1,10 @@
 import { useState, useEffect } from "react";
+
+/* MOCK DATA: All system metrics below are simulated random values.
+   On real deployment, fetch from GET /api/system/metrics which
+   should read from /proc/stat, /proc/meminfo, df, and sensors
+   on the Kali machine. Replace the random metric generation with
+   actual system data polling. */
 import { Cpu, HardDrive, MemoryStick, Thermometer } from "lucide-react";
 
 export default function SystemMonitor() {

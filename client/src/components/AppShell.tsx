@@ -6,10 +6,18 @@ interface Props {
   children: React.ReactNode;
 }
 
+/* ──────────────────────────────────────────────────────────────
+   APP SHELL — Main layout wrapper
+   Responsive: NavRail collapses on small screens,
+   content fills remaining space.
+   ────────────────────────────────────────────────────────────── */
 export default function AppShell({ children }: Props) {
   return (
     <div className="crt-flicker flex h-screen overflow-hidden bg-[#050508]">
-      <NavRail />
+      {/* Sidebar — hidden on very small mobile, shown on sm+ */}
+      <div className="hidden sm:block flex-shrink-0">
+        <NavRail />
+      </div>
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <TopBar />
         <div className="flex-1 overflow-hidden">

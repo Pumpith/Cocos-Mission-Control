@@ -15,7 +15,8 @@ export default function OnboardingWizard({ onComplete }: Props) {
   const [step, setStep] = useState(0);
   const [gatewayUrl, setGatewayUrl] = useState("ws://localhost:18789");
   const [gatewayToken, setGatewayToken] = useState("");
-  const [agentName, setAgentName] = useState("MOLTY");
+  /* MOCK DATA: Default agent name — loaded from OpenClaw config on real deploy */
+  const [agentName, setAgentName] = useState("COCO");
   const [model, setModel] = useState("claude-opus-4-6");
   const [scanProgress, setScanProgress] = useState(0);
   const [scanDone, setScanDone] = useState(false);
@@ -43,7 +44,7 @@ export default function OnboardingWizard({ onComplete }: Props) {
  ╚██████╔╝██║     ███████╗██║ ╚████║╚██████╗███████╗██║  ██║╚███╔███╔╝
   ╚═════╝ ╚═╝     ╚══════╝╚═╝  ╚═══╝ ╚═════╝╚══════╝╚═╝  ╚═╝ ╚══╝╚══╝`}
           </pre>
-          <div className="text-lg font-bold glow-text" style={{ color: "#00FF9C" }}>MISSION CONTROL v2.0</div>
+          <div className="text-lg font-bold glow-text" style={{ color: "#00FF9C" }}>MISSION CONTROL v3.0</div>
           <p className="text-[11px]" style={{ color: "rgba(0,255,156,0.5)" }}>
             Your hacker command center for AI agent orchestration.<br/>
             Weapon vault. Firewall monitoring. Threat intelligence.<br/>
@@ -130,8 +131,8 @@ export default function OnboardingWizard({ onComplete }: Props) {
       );
       case 4: return (
         <div className="space-y-4 text-center">
-          <div className="text-5xl mb-2">🦞</div>
-          <div className="text-lg font-bold glow-text" style={{ color: "#00FF9C" }}>SYSTEMS READY</div>
+          <div className="text-5xl mb-2">🎃</div>
+          <div className="text-lg font-bold glow-text" style={{ color: "#00FF9C" }}>COCO IS READY</div>
           <p className="text-[11px]" style={{ color: "rgba(0,255,156,0.6)" }}>
             Gateway: {gatewayUrl}<br/>
             Agent: {agentName} // Model: {model}<br/>

@@ -1,4 +1,10 @@
 import { useState, useEffect } from "react";
+
+/* MOCK DATA: All network interface data below is simulated.
+   On real deployment, fetch from GET /api/system/network-interfaces
+   which should call `ip addr` and `ifstat` on the Kali machine
+   and return parsed results. Replace INTERFACES array and the
+   random traffic generator with actual polling data. */
 import { Wifi, Network, ArrowUp, ArrowDown, Activity } from "lucide-react";
 
 interface NetInterface {

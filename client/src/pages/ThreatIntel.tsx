@@ -1,5 +1,16 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import AppShell from "@/components/AppShell";
+
+/* MOCK DATA: All threat intelligence data is simulated — API
+   statuses, recent lookups, threat feeds, IOC stats. On real
+   deployment:
+   - API keys should be stored in OpenClaw config and loaded
+     from GET /api/config/threat-intel-keys
+   - IOC lookups should call actual APIs (VirusTotal, AlienVault,
+     AbuseIPDB, Shodan, etc.) via backend proxy endpoints
+   - Recent lookups and feeds should be stored in SQLite and
+     fetched from GET /api/threat-intel/history
+   Replace all hardcoded data and simulated API responses. */
 import {
   Shield,
   Radar,
