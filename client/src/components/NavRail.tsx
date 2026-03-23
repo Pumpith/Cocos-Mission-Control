@@ -107,7 +107,7 @@ export default function NavRail() {
           onClick={() => setLocation("/")}
           title="OPENCLAW // MISSION CONTROL"
         >
-          {/* ─── Coco 🎃 Agent Branding ─── */}
+          {/* ─── B1GHER0 Agent Branding ─── */}
           <div
             className="flex items-center justify-center w-8 h-8 text-base flex-shrink-0"
             style={{
@@ -116,14 +116,14 @@ export default function NavRail() {
               background: "rgba(0,255,156,0.03)",
             }}
           >
-            🎃
+            🤖
           </div>
           {expanded && (
             <span
               className="text-[10px] font-bold tracking-widest whitespace-nowrap glow-text"
               style={{ color: "#00FF9C" }}
             >
-              COCO
+              B1GHER0
             </span>
           )}
         </div>

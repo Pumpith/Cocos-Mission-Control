@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import AppShell from "@/components/AppShell";
 import {
   Search,
@@ -23,247 +23,34 @@ import {
   ArrowLeft,
   FolderOpen,
 } from "lucide-react";
-
-/* ══════════════════════════════════════════════════════════════════════
-   MOCK DATA — AGENTS
-   ──────────────────────────────────────────────────────────────────────
-   In production, agent data comes from two sources:
-   1. Static config: ~/.openclaw/openclaw.json → agents.list[]
-      Each entry defines: id, name, emoji, role, model, description,
-      installedSkills[], memoryFiles[]
-   2. Live status: Gateway WebSocket method "system-presence"
-      The Gateway pushes real-time presence events showing which
-      agents are actively processing, idle, or in error state.
-      Subscribe via: ws://localhost:9099/ws → { method: "system-presence" }
-
-   Agent creation is done by editing openclaw.json → agents.list[]
-   and restarting the Gateway: `openclaw gateway restart`
-   ══════════════════════════════════════════════════════════════════════ */
+import { fetchAgents, type Agent } from "@/lib/gateway";
 
 type AgentStatus = "active" | "idle" | "error";
 
-interface Agent {
-  id: string;
-  name: string;
-  emoji: string;
-  model: string;
-  status: AgentStatus;
-  role: string;
+interface AgentDetail extends Agent {
   description: string;
-  skillsCount: number;
-  sessionsCount: number;
-  memoryUsageMB: number;
-  memoryCapMB: number;
   installedSkills: string[];
   activeSessions: { id: string; task: string; started: string }[];
   memoryFiles: { name: string; sizeMB: number; modified: string }[];
-  uptime: string;
 }
 
-/* MOCK DATA: Replace with data from Gateway WebSocket "system-presence"
-   and agent config from ~/.openclaw/openclaw.json → agents.list[] */
-const AGENTS: Agent[] = [
+const DEFAULT_AGENTS: AgentDetail[] = [
   {
-    id: "coco-prime",
-    name: "Coco",
-    emoji: "🎃",
-    model: "claude-opus-4-6",
+    id: "main",
+    name: "B1GHER0",
+    emoji: "🤖",
+    model: "minimax/MiniMax-M2.5",
     status: "active",
     role: "Primary Orchestrator",
-    description:
-      "Main agent. Orchestrates all sub-agents, manages memory, handles direct user interaction. Always online.",
-    skillsCount: 12,
-    sessionsCount: 3,
-    memoryUsageMB: 847,
+    description: "Main agent. Orchestrates all sub-agents.",
+    skillsCount: 0,
+    sessionsCount: 0,
+    memoryUsageMB: 0,
     memoryCapMB: 2048,
-    installedSkills: [
-      "core-orchestration",
-      "memory-management",
-      "task-routing",
-      "context-synthesis",
-      "code-review",
-      "web-research",
-      "file-ops",
-      "shell-exec",
-      "git-ops",
-      "clawhub-integration",
-      "agent-comms",
-      "threat-assessment",
-    ],
-    activeSessions: [
-      { id: "sess-001", task: "Monitoring system health", started: "2026-03-23 00:14" },
-      { id: "sess-002", task: "Processing inbound threat feed", started: "2026-03-23 03:41" },
-      { id: "sess-003", task: "Building AgentsSkills page", started: "2026-03-23 04:02" },
-    ],
-    memoryFiles: [
-      { name: "context-window.jsonl", sizeMB: 312, modified: "2026-03-23 04:10" },
-      { name: "long-term-memory.db", sizeMB: 489, modified: "2026-03-23 03:55" },
-      { name: "task-queue.json", sizeMB: 2.4, modified: "2026-03-23 04:12" },
-      { name: "agent-registry.json", sizeMB: 0.8, modified: "2026-03-22 22:30" },
-      { name: "session-logs/", sizeMB: 42.8, modified: "2026-03-23 04:13" },
-    ],
-    uptime: "14d 07h 33m",
-  },
-  {
-    id: "researcher-01",
-    name: "Researcher",
-    emoji: "🔬",
-    model: "claude-sonnet-4-20250514",
-    status: "active",
-    role: "Intelligence Gatherer",
-    description:
-      "Deep web research, OSINT collection, document analysis. Feeds findings to Coco for synthesis.",
-    skillsCount: 8,
-    sessionsCount: 2,
-    memoryUsageMB: 412,
-    memoryCapMB: 1024,
-    installedSkills: [
-      "web-research",
-      "osint-collector",
-      "document-analysis",
-      "pdf-extraction",
-      "news-monitor",
-      "arxiv-search",
-      "whois-lookup",
-      "dns-enum",
-    ],
-    activeSessions: [
-      { id: "sess-r01", task: "CVE database scan for new vulns", started: "2026-03-23 02:18" },
-      { id: "sess-r02", task: "Competitor analysis — ShadowNet", started: "2026-03-23 03:55" },
-    ],
-    memoryFiles: [
-      { name: "research-cache.db", sizeMB: 289, modified: "2026-03-23 04:08" },
-      { name: "source-index.jsonl", sizeMB: 98, modified: "2026-03-23 03:22" },
-      { name: "findings-queue.json", sizeMB: 25, modified: "2026-03-23 04:11" },
-    ],
-    uptime: "14d 07h 33m",
-  },
-  {
-    id: "builder-01",
-    name: "Builder",
-    emoji: "🔧",
-    model: "claude-sonnet-4-20250514",
-    status: "idle",
-    role: "Code Generator",
-    description:
-      "Writes, refactors, and tests code. Handles build pipelines, deployments, and infrastructure-as-code.",
-    skillsCount: 10,
-    sessionsCount: 0,
-    memoryUsageMB: 156,
-    memoryCapMB: 1024,
-    installedSkills: [
-      "code-generation",
-      "code-review",
-      "test-runner",
-      "build-pipeline",
-      "docker-ops",
-      "terraform-ops",
-      "git-ops",
-      "npm-management",
-      "linter-integration",
-      "deploy-automation",
-    ],
+    installedSkills: [],
     activeSessions: [],
-    memoryFiles: [
-      { name: "code-context.jsonl", sizeMB: 134, modified: "2026-03-23 01:47" },
-      { name: "build-artifacts/", sizeMB: 22, modified: "2026-03-22 23:15" },
-    ],
-    uptime: "14d 07h 33m",
-  },
-  {
-    id: "secops-01",
-    name: "SecOps",
-    emoji: "🛡️",
-    model: "claude-opus-4-6",
-    status: "active",
-    role: "Security Operations",
-    description:
-      "Monitors firewall, runs vulnerability scans, manages IDS/IPS rules. Escalates critical threats to Coco.",
-    skillsCount: 9,
-    sessionsCount: 1,
-    memoryUsageMB: 623,
-    memoryCapMB: 1024,
-    installedSkills: [
-      "firewall-management",
-      "ids-monitoring",
-      "vuln-scanner",
-      "log-analysis",
-      "incident-response",
-      "rule-engine",
-      "threat-intel-feed",
-      "cert-monitor",
-      "compliance-check",
-    ],
-    activeSessions: [
-      { id: "sess-s01", task: "Continuous firewall log analysis", started: "2026-03-23 00:00" },
-    ],
-    memoryFiles: [
-      { name: "threat-db.sqlite", sizeMB: 445, modified: "2026-03-23 04:12" },
-      { name: "firewall-rules.json", sizeMB: 12, modified: "2026-03-23 02:30" },
-      { name: "incident-log.jsonl", sizeMB: 166, modified: "2026-03-23 04:10" },
-    ],
-    uptime: "14d 07h 33m",
-  },
-  {
-    id: "scraper-01",
-    name: "Scraper",
-    emoji: "🕷️",
-    model: "claude-haiku-4-20250414",
-    status: "error",
-    role: "Data Collector",
-    description:
-      "Automated web data extraction, API polling, RSS feed monitoring. Currently rate-limited by target.",
-    skillsCount: 6,
-    sessionsCount: 0,
-    memoryUsageMB: 89,
-    memoryCapMB: 512,
-    installedSkills: [
-      "web-scraper",
-      "api-poller",
-      "rss-monitor",
-      "data-parser",
-      "proxy-rotation",
-      "captcha-solver",
-    ],
-    activeSessions: [],
-    memoryFiles: [
-      { name: "scrape-queue.json", sizeMB: 4.2, modified: "2026-03-23 03:48" },
-      { name: "collected-data/", sizeMB: 67, modified: "2026-03-23 03:48" },
-      { name: "error-log.jsonl", sizeMB: 17.8, modified: "2026-03-23 04:01" },
-    ],
-    uptime: "2d 11h 05m",
-  },
-  {
-    id: "monitor-01",
-    name: "Monitor",
-    emoji: "📊",
-    model: "claude-haiku-4-20250414",
-    status: "active",
-    role: "System Observer",
-    description:
-      "Watches system metrics, network traffic, and agent health. Generates alerts and dashboards.",
-    skillsCount: 7,
-    sessionsCount: 1,
-    memoryUsageMB: 203,
-    memoryCapMB: 512,
-    installedSkills: [
-      "system-metrics",
-      "network-monitor",
-      "agent-health-check",
-      "alert-engine",
-      "dashboard-builder",
-      "log-aggregator",
-      "uptime-tracker",
-    ],
-    activeSessions: [
-      { id: "sess-m01", task: "Real-time system metrics collection", started: "2026-03-23 00:00" },
-    ],
-    memoryFiles: [
-      { name: "metrics-db.sqlite", sizeMB: 178, modified: "2026-03-23 04:13" },
-      { name: "alert-rules.json", sizeMB: 3.2, modified: "2026-03-22 18:45" },
-      { name: "dashboard-state.json", sizeMB: 21.8, modified: "2026-03-23 04:13" },
-    ],
-    uptime: "14d 07h 33m",
+    memoryFiles: [],
+    uptime: "0d 0h 0m",
   },
 ];
 
@@ -683,8 +470,26 @@ export default function AgentsSkills() {
 // ═════════════════════════════════════════════════════════════════════
 
 function AgentsTab() {
-  const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null);
+  const [agents, setAgents] = useState<AgentDetail[]>(DEFAULT_AGENTS);
+  const [selectedAgent, setSelectedAgent] = useState<AgentDetail | null>(null);
   const [showNewAgentModal, setShowNewAgentModal] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchAgents().then((realAgents) => {
+      const detailed = realAgents.map(a => ({
+        ...a,
+        description: `${a.name} agent - ${a.role}`,
+        installedSkills: [],
+        activeSessions: [],
+        memoryFiles: [],
+      }));
+      setAgents(detailed);
+      setLoading(false);
+    }).catch(() => {
+      setLoading(false);
+    });
+  }, []);
 
   if (selectedAgent) {
     return (
@@ -724,8 +529,7 @@ function AgentsTab() {
               color: "rgba(0,255,156,0.5)",
             }}
           >
-            {AGENTS.length} REGISTERED • {AGENTS.filter((a) => a.status === "active").length} ACTIVE
-            • {AGENTS.filter((a) => a.status === "error").length} ERROR
+            {loading ? "LOADING..." : `${agents.length} REGISTERED • ${agents.filter((a) => a.status === "active").length} ACTIVE • ${agents.filter((a) => a.status === "error").length} ERROR`}
           </span>
         </div>
         <button
@@ -768,11 +572,11 @@ function AgentsTab() {
             gap: 10,
           }}
         >
-          {AGENTS.map((agent) => (
+          {agents.map((agent) => (
             <AgentCard
               key={agent.id}
               agent={agent}
-              isPrimary={agent.id === "coco-prime"}
+              isPrimary={agent.id === "main"}
               onClick={() => setSelectedAgent(agent)}
             />
           ))}
@@ -793,7 +597,7 @@ function AgentCard({
   isPrimary,
   onClick,
 }: {
-  agent: Agent;
+  agent: AgentDetail;
   isPrimary: boolean;
   onClick: () => void;
 }) {
@@ -1054,7 +858,7 @@ function AgentDetailView({
   agent,
   onBack,
 }: {
-  agent: Agent;
+  agent: AgentDetail;
   onBack: () => void;
 }) {
   const statusColor = STATUS_COLORS[agent.status];

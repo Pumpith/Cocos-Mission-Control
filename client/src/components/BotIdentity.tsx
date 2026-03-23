@@ -19,7 +19,7 @@ const CHANNELS = [
 
 export default function BotIdentity() {
   /* MOCK DATA: Default agent name — replace with value from OpenClaw config */
-  const [name, setName] = useState("COCO");
+  const [name, setName] = useState("B1GHER0");
   const [persona, setPersona] = useState(
     "24/7 personal AI agent. Access to full system. Memory: persistent. Mission: whatever you need."
   );
@@ -49,7 +49,7 @@ export default function BotIdentity() {
               boxShadow: "0 0 16px rgba(0,255,156,0.15), inset 0 0 12px rgba(0,255,156,0.05)",
             }}
           >
-            🎃
+            🤖
           </div>
           <div className="flex-1">
             <label

@@ -50,9 +50,9 @@ export default function TopBar() {
         background: "rgba(5,5,8,0.98)",
       }}
     >
-      {/* Left: Logo — Coco 🎃 Branding */}
+      {/* Left: Logo — B1GHER0 Branding */}
       <div className="flex items-center gap-3">
-        <span className="text-2xl" role="img" aria-label="coco agent">🎃</span>
+        <span className="text-2xl" role="img" aria-label="agent">🤖</span>
         <div className="hidden sm:block">
           <span
             className="text-sm font-bold tracking-widest glow-text"
@@ -64,7 +64,7 @@ export default function TopBar() {
             className="text-sm font-light tracking-widest ml-2 hidden md:inline"
             style={{ color: "rgba(0,255,156,0.4)" }}
           >
-            // COCO MISSION CONTROL
+            // B1GHER0 MISSION CONTROL
           </span>
         </div>
       </div>
@@ -134,7 +134,7 @@ export default function TopBar() {
               : "0 0 6px rgba(255,45,120,0.5)",
           }}
         >
-          {online ? "COCO ONLINE" : "COCO OFFLINE"}
+          {online ? "B1GHER0 ONLINE" : "B1GHER0 OFFLINE"}
         </span>
       </button>
     </div>

@@ -13,7 +13,7 @@ import CocoChat from "@/components/CocoChat";
    DASHBOARD — Main overview page
    Responsive 3-column layout on desktop, stacked on mobile.
    CocoChat is integrated into the center column alongside the
-   CommandLog. The chat provides direct communication with Coco 🎃
+   CommandLog. The chat provides direct communication with B1GHER0 🤖
    including file uploads, approval actions, and sudo password entry.
    ────────────────────────────────────────────────────────────── */
 export default function Dashboard() {

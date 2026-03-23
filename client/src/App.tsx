@@ -47,8 +47,12 @@ function AppRouter() {
 }
 
 function App() {
-  const [booted, setBooted] = useState(false);
-  const [onboarded, setOnboarded] = useState(false);
+  const [booted, setBooted] = useState(() => {
+    return localStorage.getItem("mc_booted") === "true";
+  });
+  const [onboarded, setOnboarded] = useState(() => {
+    return localStorage.getItem("mc_onboarded") === "true";
+  });
   const [showOnboarding, setShowOnboarding] = useState(false);
 
   useEffect(() => {
@@ -56,6 +60,14 @@ function App() {
       setShowOnboarding(true);
     }
   }, [booted, onboarded]);
+
+  useEffect(() => {
+    localStorage.setItem("mc_booted", booted.toString());
+  }, [booted]);
+
+  useEffect(() => {
+    localStorage.setItem("mc_onboarded", onboarded.toString());
+  }, [onboarded]);
 
   return (
     <QueryClientProvider client={queryClient}>

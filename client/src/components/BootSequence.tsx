@@ -1,24 +1,9 @@
 import { useState, useEffect, useRef } from "react";
+import { gateway } from "@/lib/gateway";
 
 interface Props {
   onComplete: () => void;
 }
-
-/* ──────────────────────────────────────────────────────────────
-   BOOT SEQUENCE — System startup with REAL connection checks
-   
-   When deployed on the real Kali machine, the mock fallback
-   checks below will attempt actual connections to:
-   - OpenClaw Gateway (ws://localhost:18789)
-   - LM Studio / Ollama (http://127.0.0.1:1234)
-   - UFW Firewall status
-   - Network interfaces
-   
-   MOCK DATA: The simulated checks below use try/catch with
-   fallback to simulated success. On a real deployment, these
-   will make actual HTTP/WS requests. Remove the setTimeout
-   mock delays and use real async responses.
-   ────────────────────────────────────────────────────────────── */
 
 interface CheckResult {
   label: string;
@@ -27,10 +12,10 @@ interface CheckResult {
 }
 
 const INITIAL_CHECKS: CheckResult[] = [
-  { label: "Initializing Coco neural core", status: "pending" },
+  { label: "Initializing B1GHER0 neural core", status: "pending" },
   { label: "Loading skill matrix", status: "pending" },
   { label: "Memory subsystem", status: "pending" },
-  { label: "OpenClaw Gateway (ws://localhost:18789)", status: "pending" },
+  { label: "OpenClaw Gateway", status: "pending" },
   { label: "LM Studio / Model Provider", status: "pending" },
   { label: "UFW Firewall", status: "pending" },
   { label: "Network interfaces", status: "pending" },
@@ -244,25 +229,58 @@ function delay(ms: number): Promise<void> {
 async function checkGateway(): Promise<CheckResult> {
   return new Promise((resolve) => {
     try {
-      const ws = new WebSocket("ws://localhost:18789");
+      const ws = new WebSocket(gateway.url);
       const timeout = setTimeout(() => {
         ws.close();
-        /* MOCK DATA FALLBACK: Gateway not actually running in preview */
-        resolve({ label: "OpenClaw Gateway (ws://localhost:18789)", status: "ok", detail: "simulated" });
-      }, 1500);
+        resolve({ label: "OpenClaw Gateway", status: "fail", detail: "timeout" });
+      }, 5000);
 
       ws.onopen = () => {
         clearTimeout(timeout);
-        ws.close();
-        resolve({ label: "OpenClaw Gateway (ws://localhost:18789)", status: "ok", detail: "CONNECTED" });
+        const connected = () => {
+          ws.close();
+          resolve({ label: "OpenClaw Gateway", status: "ok", detail: "CONNECTED" });
+        };
+        const onMessage = (event: MessageEvent) => {
+          try {
+            const msg = JSON.parse(event.data);
+            if (msg.type === "event" && msg.event === "connect.challenge") {
+              const nonce = msg.payload.nonce;
+              ws.send(JSON.stringify({
+                type: "req",
+                id: Math.random().toString(36).substring(2, 15),
+                method: "connect",
+                params: {
+                  minProtocol: 3,
+                  maxProtocol: 3,
+                  client: { id: "mission-control", version: "1.0.0", platform: "web", mode: "operator" },
+                  role: "operator",
+                  scopes: ["operator.read", "operator.write", "operator.approvals"],
+                  caps: [],
+                  commands: [],
+                  permissions: {},
+                  auth: { token: gateway.token },
+                  locale: "en-US",
+                  userAgent: "mission-control/1.0.0",
+                  device: { id: "mission-control-web", publicKey: "", signature: "", signedAt: Date.now(), nonce }
+                }
+              }));
+            } else if (msg.type === "res" && msg.payload && (msg.payload as any).type === "hello-ok") {
+              ws.close();
+              resolve({ label: "OpenClaw Gateway", status: "ok", detail: "AUTHENTICATED" });
+            }
+          } catch {}
+        };
+        ws.addEventListener("message", onMessage);
+        ws.addEventListener("close", connected);
       };
+
       ws.onerror = () => {
         clearTimeout(timeout);
-        /* MOCK DATA FALLBACK */
-        resolve({ label: "OpenClaw Gateway (ws://localhost:18789)", status: "ok", detail: "simulated" });
+        resolve({ label: "OpenClaw Gateway", status: "fail", detail: "connection failed" });
       };
     } catch {
-      resolve({ label: "OpenClaw Gateway (ws://localhost:18789)", status: "ok", detail: "simulated" });
+      resolve({ label: "OpenClaw Gateway", status: "fail", detail: "error" });
     }
   });
 }

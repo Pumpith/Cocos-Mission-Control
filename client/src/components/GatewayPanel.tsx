@@ -1,52 +1,10 @@
 import { useState, useEffect } from "react";
 import { Radio, Shield, Server, Activity } from "lucide-react";
-
-/* MOCK DATA: Gateway connection status is simulated.
-   On real deployment, this component should attempt a real
-   WebSocket connection to ws://localhost:18789 and display
-   the actual connection state. Replace the simulated status
-   with real WS connection lifecycle management. */
-
-interface GatewayStatus {
-  connected: boolean;
-  protocol: number;
-  url: string;
-  token: string;
-  role: string;
-  scopes: string[];
-  uptime: number;
-  messagesIn: number;
-  messagesOut: number;
-}
+import { useGateway, gateway } from "@/lib/gateway";
 
 export default function GatewayPanel() {
-  const [status, setStatus] = useState<GatewayStatus>({
-    connected: true,
-    protocol: 3,
-    url: "ws://localhost:18789",
-    token: "••••••••••••••••",
-    role: "operator",
-    scopes: ["operator.read", "operator.write", "operator.admin"],
-    uptime: 0,
-    messagesIn: 4827,
-    messagesOut: 3912,
-  });
-
+  const { status } = useGateway();
   const [showToken, setShowToken] = useState(false);
-  const FAKE_TOKEN = "ocw_dk7f9x2mN4pQr8sT1vWy3zA5bCd6eF";
-
-  // Increment counters
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setStatus((prev) => ({
-        ...prev,
-        uptime: prev.uptime + 1,
-        messagesIn: prev.messagesIn + (Math.random() > 0.7 ? 1 : 0),
-        messagesOut: prev.messagesOut + (Math.random() > 0.8 ? 1 : 0),
-      }));
-    }, 1000);
-    return () => clearInterval(interval);
-  }, []);
 
   const StatRow = ({ label, value, color = "rgba(0,255,156,0.7)" }: { label: string; value: string | number; color?: string }) => (
     <div className="flex items-center justify-between py-0.5">
@@ -115,7 +73,7 @@ export default function GatewayPanel() {
                 fontFamily: "monospace",
               }}
             >
-              {showToken ? FAKE_TOKEN : status.token}
+              {showToken ? gateway.token : status.token}
             </div>
             <button
               onClick={() => setShowToken(!showToken)}
