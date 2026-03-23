@@ -3,7 +3,8 @@ import { useLocation } from "wouter";
 import {
   LayoutDashboard, Sword, Shield, Radar, Bot, Settings,
   Activity, Building2, FileCode, HeartPulse,
-  ChevronLeft, ChevronRight, MessageSquare
+  ChevronLeft, ChevronRight, MessageSquare,
+  Users, ListChecks, FolderOpen, Coins, ScrollText
 } from "lucide-react";
 
 /* ──────────────────────────────────────────────────────────────
@@ -30,8 +31,10 @@ const NAV_GROUPS: NavGroup[] = [
     label: "",
     items: [
       { path: "/", icon: LayoutDashboard, label: "DASHBOARD", shortLabel: "DASH" },
-      { path: "/agent-comms", icon: MessageSquare, label: "AGENT COMMS", shortLabel: "COMMS" },
+      { path: "/agents-skills", icon: Users, label: "AGENTS & SKILLS", shortLabel: "AGNT" },
+      { path: "/planner", icon: ListChecks, label: "TASK PLANNER", shortLabel: "PLAN" },
       { path: "/office", icon: Building2, label: "PIXEL OFFICE", shortLabel: "OFFICE" },
+      { path: "/agent-comms", icon: MessageSquare, label: "AGENT COMMS", shortLabel: "COMMS" },
     ],
   },
   {
@@ -41,12 +44,15 @@ const NAV_GROUPS: NavGroup[] = [
       { path: "/weapons", icon: Sword, label: "WEAPON VAULT", shortLabel: "WEAP" },
       { path: "/firewall", icon: Shield, label: "FIREWALL", shortLabel: "FW" },
       { path: "/threat-intel", icon: Radar, label: "THREAT INTEL", shortLabel: "THRT" },
+      { path: "/tokens", icon: Coins, label: "TOKEN USAGE", shortLabel: "TKN" },
     ],
   },
   {
     id: "admin",
     label: "ADMIN",
     items: [
+      { path: "/files", icon: FolderOpen, label: "FILE EXPLORER", shortLabel: "FILE" },
+      { path: "/activity", icon: ScrollText, label: "ACTIVITY LOG", shortLabel: "LOG" },
       { path: "/security", icon: HeartPulse, label: "SECURITY & HEALTH", shortLabel: "SEC" },
       { path: "/config", icon: FileCode, label: "CONFIG EDITOR", shortLabel: "CONF" },
       { path: "/settings", icon: Settings, label: "SETTINGS", shortLabel: "SET" },

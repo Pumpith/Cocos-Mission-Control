@@ -7,11 +7,14 @@ import GatewayPanel from "@/components/GatewayPanel";
 import NetworkInterfaces from "@/components/NetworkInterfaces";
 import SystemMonitor from "@/components/SystemMonitor";
 import AddTaskModal from "@/components/AddTaskModal";
+import CocoChat from "@/components/CocoChat";
 
 /* ──────────────────────────────────────────────────────────────
    DASHBOARD — Main overview page
    Responsive 3-column layout on desktop, stacked on mobile.
-   Pixel Office has been moved to its own page (/office).
+   CocoChat is integrated into the center column alongside the
+   CommandLog. The chat provides direct communication with Coco 🎃
+   including file uploads, approval actions, and sudo password entry.
    ────────────────────────────────────────────────────────────── */
 export default function Dashboard() {
   const [showAddTask, setShowAddTask] = useState(false);
@@ -28,8 +31,9 @@ export default function Dashboard() {
             <GatewayPanel />
           </div>
 
-          {/* CENTER COLUMN */}
+          {/* CENTER COLUMN — CocoChat on top, CommandLog below */}
           <div className="flex flex-col gap-2 min-h-0 overflow-hidden">
+            <CocoChat />
             <CommandLog />
           </div>
 

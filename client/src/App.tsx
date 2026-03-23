@@ -13,6 +13,11 @@ import PixelOfficePage from "@/pages/PixelOfficePage";
 import AgentComms from "@/pages/AgentComms";
 import ConfigEditor from "@/pages/ConfigEditor";
 import SecurityHealth from "@/pages/SecurityHealth";
+import AgentsSkills from "@/pages/AgentsSkills";
+import TaskPlanner from "@/pages/TaskPlanner";
+import FileExplorer from "@/pages/FileExplorer";
+import TokenUsage from "@/pages/TokenUsage";
+import ActivityLog from "@/pages/ActivityLog";
 import OnboardingWizard from "@/components/OnboardingWizard";
 import BootSequence from "@/components/BootSequence";
 
@@ -20,6 +25,11 @@ function AppRouter() {
   return (
     <Switch>
       <Route path="/" component={Dashboard} />
+      <Route path="/agents-skills" component={AgentsSkills} />
+      <Route path="/planner" component={TaskPlanner} />
+      <Route path="/files" component={FileExplorer} />
+      <Route path="/tokens" component={TokenUsage} />
+      <Route path="/activity" component={ActivityLog} />
       <Route path="/weapons" component={WeaponVault} />
       <Route path="/firewall" component={FirewallMonitor} />
       <Route path="/threat-intel" component={ThreatIntel} />
