@@ -18,6 +18,8 @@ import TaskPlanner from "@/pages/TaskPlanner";
 import FileExplorer from "@/pages/FileExplorer";
 import TokenUsage from "@/pages/TokenUsage";
 import ActivityLog from "@/pages/ActivityLog";
+import SSHMonitor from "@/pages/SSHMonitor";
+import Settings from "@/pages/Settings";
 import OnboardingWizard from "@/components/OnboardingWizard";
 import BootSequence from "@/components/BootSequence";
 
@@ -37,6 +39,8 @@ function AppRouter() {
       <Route path="/agent-comms" component={AgentComms} />
       <Route path="/config" component={ConfigEditor} />
       <Route path="/security" component={SecurityHealth} />
+      <Route path="/ssh" component={SSHMonitor} />
+      <Route path="/settings" component={Settings} />
       <Route component={Dashboard} />
     </Switch>
   );

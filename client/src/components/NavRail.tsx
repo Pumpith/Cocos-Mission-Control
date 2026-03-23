@@ -4,7 +4,7 @@ import {
   LayoutDashboard, Sword, Shield, Radar, Bot, Settings,
   Activity, Building2, FileCode, HeartPulse,
   ChevronLeft, ChevronRight, MessageSquare,
-  Users, ListChecks, FolderOpen, Coins, ScrollText
+  Users, ListChecks, FolderOpen, Coins, ScrollText, Terminal
 } from "lucide-react";
 
 /* ──────────────────────────────────────────────────────────────
@@ -45,6 +45,7 @@ const NAV_GROUPS: NavGroup[] = [
       { path: "/firewall", icon: Shield, label: "FIREWALL", shortLabel: "FW" },
       { path: "/threat-intel", icon: Radar, label: "THREAT INTEL", shortLabel: "THRT" },
       { path: "/tokens", icon: Coins, label: "TOKEN USAGE", shortLabel: "TKN" },
+      { path: "/ssh", icon: Terminal, label: "SSH MONITOR", shortLabel: "SSH" },
     ],
   },
   {

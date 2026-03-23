@@ -2,7 +2,8 @@ import { useState, useRef, useEffect } from "react";
 import {
   Send, Paperclip, Shield, Key, ChevronDown, ChevronUp,
   CheckCircle, XCircle, AlertTriangle, Terminal, Bot, User,
-  FileText, Image as ImageIcon, File, Loader2, X
+  FileText, Image as ImageIcon, File, Loader2, X,
+  Package, Download, Check, AlertCircle
 } from "lucide-react";
 
 /* ══════════════════════════════════════════════════════════════
@@ -132,12 +133,34 @@ const MOCK_APPROVALS: ApprovalRequest[] = [
   },
 ];
 
+/**
+ * MOCK DATA — Package install statuses
+ * In production, package install commands are sent via Gateway:
+ * ws.send({ type: "req", method: "chat.send",
+ *   params: { message: "/install apt nmap" } })
+ * Coco interprets the command and creates an exec.approval.requested
+ * event for the actual install command (e.g., sudo apt install -y nmap).
+ * The install status is tracked via Gateway exec events.
+ */
+interface PackageInstall {
+  id: string;
+  name: string;
+  manager: "apt" | "pip" | "npm" | "snap" | "gem";
+  status: "pending" | "installing" | "installed" | "failed";
+  requestedAt: Date;
+  output?: string;
+}
+
 export default function CocoChat() {
   const [messages, setMessages] = useState<ChatMessage[]>(MOCK_MESSAGES);
   const [approvals, setApprovals] = useState<ApprovalRequest[]>(MOCK_APPROVALS);
   const [input, setInput] = useState("");
   const [files, setFiles] = useState<File[]>([]);
   const [showApprovals, setShowApprovals] = useState(true);
+  const [showInstaller, setShowInstaller] = useState(false);
+  const [installPkg, setInstallPkg] = useState("");
+  const [installMgr, setInstallMgr] = useState<"apt" | "pip" | "npm">("apt");
+  const [installs, setInstalls] = useState<PackageInstall[]>([]);
   const [sudoPassword, setSudoPassword] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -192,6 +215,84 @@ export default function CocoChat() {
     setSudoPassword("");
   };
 
+  /**
+   * PACKAGE INSTALL HANDLER
+   * Sends an install request to Coco. In production, this triggers:
+   * 1. chat.send with message: "/install {manager} {package}"
+   * 2. Coco creates an exec.approval.requested for the sudo command
+   * 3. User approves → Coco runs the install → output streamed back
+   * Package managers supported: apt (Kali default), pip, npm, snap, gem
+   */
+  const handleInstallPackage = () => {
+    if (!installPkg.trim()) return;
+
+    const pkgName = installPkg.trim();
+    const mgr = installMgr;
+    const installCmd = mgr === "apt" ? `sudo apt install -y ${pkgName}`
+      : mgr === "pip" ? `pip install ${pkgName}`
+      : `npm install -g ${pkgName}`;
+
+    // Add to installs list
+    const newInstall: PackageInstall = {
+      id: `inst-${Date.now()}`,
+      name: pkgName,
+      manager: mgr,
+      status: "pending",
+      requestedAt: new Date(),
+    };
+    setInstalls(prev => [newInstall, ...prev]);
+
+    // Add chat message
+    setMessages(prev => [...prev, {
+      id: `u-${Date.now()}`,
+      role: "user",
+      content: `Install ${pkgName} via ${mgr}`,
+      timestamp: new Date(),
+    }]);
+
+    // If apt, create approval request (needs sudo)
+    if (mgr === "apt") {
+      setApprovals(prev => [...prev, {
+        id: `apr-inst-${Date.now()}`,
+        command: `apt install -y ${pkgName}`,
+        rawCommand: installCmd,
+        cwd: "/home/openclaw",
+        risk: "medium",
+        needsSudo: true,
+        timestamp: new Date(),
+        status: "pending",
+      }]);
+      setShowApprovals(true);
+    }
+
+    // MOCK: Simulate Coco responding
+    setIsTyping(true);
+    setTimeout(() => {
+      setIsTyping(false);
+      if (mgr === "apt") {
+        setMessages(prev => [...prev, {
+          id: `a-${Date.now()}`,
+          role: "assistant",
+          content: `I'll install **${pkgName}** via apt. This needs sudo — check the approval panel above. 🎃`,
+          timestamp: new Date(),
+        }]);
+      } else {
+        // pip/npm don't need sudo approval
+        setMessages(prev => [...prev, {
+          id: `a-${Date.now()}`,
+          role: "assistant",
+          content: `Installing **${pkgName}** via ${mgr}... \n\n\`\`\`\n$ ${installCmd}\nResolving dependencies...\nInstalling ${pkgName}@latest\nDone ✓\n\`\`\`\n\n${pkgName} installed successfully. 🎃`,
+          timestamp: new Date(),
+        }]);
+        setInstalls(prev => prev.map(i =>
+          i.id === newInstall.id ? { ...i, status: "installed" as const, output: `Installed ${pkgName} successfully` } : i
+        ));
+      }
+    }, 1500);
+
+    setInstallPkg("");
+  };
+
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       setFiles(prev => [...prev, ...Array.from(e.target.files!)]);
@@ -222,19 +323,105 @@ export default function CocoChat() {
             LIVE
           </span>
         </div>
-        {pendingApprovals.length > 0 && (
+        <div className="flex items-center gap-1.5">
+          {/* Package Install Button */}
           <button
-            onClick={() => setShowApprovals(!showApprovals)}
-            className="flex items-center gap-1 px-2 py-0.5 text-[8px] tracking-wider animate-pulse"
-            style={{ border: "1px solid rgba(255,184,0,0.4)", color: "#FFB800", background: "rgba(255,184,0,0.08)" }}
-            data-testid="approval-toggle"
+            onClick={() => setShowInstaller(!showInstaller)}
+            className="flex items-center gap-1 px-2 py-0.5 text-[8px] tracking-wider"
+            style={{
+              border: `1px solid ${showInstaller ? "rgba(0,180,255,0.4)" : "rgba(0,180,255,0.15)"}`,
+              color: showInstaller ? "#00B4FF" : "rgba(0,180,255,0.5)",
+              background: showInstaller ? "rgba(0,180,255,0.08)" : "transparent",
+            }}
+            data-testid="install-toggle"
           >
-            <Shield size={10} />
-            {pendingApprovals.length} PENDING
-            {showApprovals ? <ChevronUp size={8} /> : <ChevronDown size={8} />}
+            <Package size={9} /> INSTALL
           </button>
-        )}
+
+          {pendingApprovals.length > 0 && (
+            <button
+              onClick={() => setShowApprovals(!showApprovals)}
+              className="flex items-center gap-1 px-2 py-0.5 text-[8px] tracking-wider animate-pulse"
+              style={{ border: "1px solid rgba(255,184,0,0.4)", color: "#FFB800", background: "rgba(255,184,0,0.08)" }}
+              data-testid="approval-toggle"
+            >
+              <Shield size={10} />
+              {pendingApprovals.length} PENDING
+              {showApprovals ? <ChevronUp size={8} /> : <ChevronDown size={8} />}
+            </button>
+          )}
+        </div>
       </div>
+
+      {/* Package Installer Panel */}
+      {showInstaller && (
+        <div className="flex-shrink-0 p-2 space-y-2" style={{ borderBottom: "1px solid rgba(0,180,255,0.15)", background: "rgba(0,180,255,0.02)" }}>
+          <div className="text-[8px] tracking-widest font-bold" style={{ color: "#00B4FF" }}>
+            // 📦 ASK COCO TO INSTALL A PACKAGE ON KALI
+          </div>
+          <div className="flex items-center gap-1.5">
+            {/* Package Manager Selector */}
+            <div className="flex gap-0.5">
+              {(["apt", "pip", "npm"] as const).map(mgr => (
+                <button
+                  key={mgr}
+                  onClick={() => setInstallMgr(mgr)}
+                  className="text-[8px] px-2 py-0.5 tracking-wider"
+                  style={{
+                    border: `1px solid ${installMgr === mgr ? "rgba(0,180,255,0.4)" : "rgba(0,180,255,0.1)"}`,
+                    color: installMgr === mgr ? "#00B4FF" : "rgba(0,180,255,0.3)",
+                    background: installMgr === mgr ? "rgba(0,180,255,0.08)" : "transparent",
+                  }}
+                  data-testid={`mgr-${mgr}`}
+                >
+                  {mgr.toUpperCase()}
+                </button>
+              ))}
+            </div>
+            <input
+              value={installPkg}
+              onChange={e => setInstallPkg(e.target.value)}
+              onKeyDown={e => { if (e.key === "Enter") handleInstallPackage(); }}
+              placeholder={installMgr === "apt" ? "e.g., nmap, wireshark, hydra..." : installMgr === "pip" ? "e.g., requests, scapy..." : "e.g., pm2, nodemon..."}
+              className="flex-1 bg-transparent text-[9px] outline-none font-mono px-2 py-0.5"
+              style={{ border: "1px solid rgba(0,180,255,0.15)", color: "#00B4FF", caretColor: "#00B4FF" }}
+              data-testid="install-input"
+            />
+            <button
+              onClick={handleInstallPackage}
+              className="flex items-center gap-1 px-2 py-0.5 text-[8px] tracking-wider"
+              style={{ border: "1px solid rgba(0,180,255,0.3)", color: "#00B4FF", background: "rgba(0,180,255,0.08)" }}
+              data-testid="install-submit"
+            >
+              <Download size={9} /> INSTALL
+            </button>
+          </div>
+          <div className="text-[7px]" style={{ color: "rgba(0,180,255,0.3)" }}>
+            {installMgr === "apt" && "Requires sudo approval • Coco will run: sudo apt install -y [package]"}
+            {installMgr === "pip" && "No sudo needed • Coco will run: pip install [package]"}
+            {installMgr === "npm" && "No sudo needed • Coco will run: npm install -g [package]"}
+          </div>
+          {/* Recent installs */}
+          {installs.length > 0 && (
+            <div className="space-y-0.5 mt-1">
+              {installs.slice(0, 5).map(inst => (
+                <div key={inst.id} className="flex items-center gap-2 text-[8px]">
+                  {inst.status === "installed" ? <Check size={8} style={{ color: "#00FF9C" }} /> :
+                   inst.status === "failed" ? <AlertCircle size={8} style={{ color: "#FF2D78" }} /> :
+                   inst.status === "installing" ? <Loader2 size={8} className="animate-spin" style={{ color: "#00B4FF" }} /> :
+                   <Package size={8} style={{ color: "rgba(0,180,255,0.3)" }} />}
+                  <span style={{ color: inst.status === "installed" ? "#00FF9C" : inst.status === "failed" ? "#FF2D78" : "rgba(0,180,255,0.5)" }}>
+                    {inst.manager} install {inst.name}
+                  </span>
+                  <span className="text-[7px] ml-auto" style={{ color: "rgba(0,255,156,0.2)" }}>
+                    {inst.status.toUpperCase()}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Approval Panel */}
       {showApprovals && pendingApprovals.length > 0 && (
